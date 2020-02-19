@@ -3,8 +3,9 @@ import React, { Component } from 'react';
 import AppHeader from './app-header/app-header';
 import TodoList from '../todo-list/todo-list';
 import './app.css';
-import SearchAndFilter from '../../layout/search-and-filter';
 import ItemAddBtn from '../item-add-btn/item-add-btn';
+import SearchPanel from '../search-panel/search-panel';
+import ItemStatusFilter from '../item-status-filter/item-status-filter';
 
 export default class App extends Component {
   maxId = 100;
@@ -13,7 +14,9 @@ export default class App extends Component {
       this.createTodoItem('Drink Coffee'),
       this.createTodoItem('Make Awesome App'),
       this.createTodoItem('Have a lunch')
-    ]
+    ],
+    term: '',
+    filter: 'active'
   };
 
   createTodoItem(label) {
@@ -24,7 +27,6 @@ export default class App extends Component {
       id: this.maxId++
     };
   }
-
   deleteItem = id => {
     this.setState(({ todoData }) => {
       const idx = todoData.findIndex(el => el.id === id);
@@ -66,19 +68,55 @@ export default class App extends Component {
       };
     });
   };
+  onSearchChange = term => {
+    this.setState({
+      term
+    });
+  };
+  search = (arr, term) => {
+    if (term === 0) {
+      return arr;
+    }
+
+    return arr.filter(item => {
+      return item.label.toLowerCase().indexOf(term.toLowerCase()) > -1;
+    });
+  };
+  filter = (arr, filter) => {
+    switch (filter) {
+      case 'active':
+        return arr.filter(item => !item.done);
+      case 'done':
+        return arr.filter(item => item.done);
+      default:
+        return arr;
+    }
+  };
+  onFilterChange = filter => {
+    this.setState({
+      filter
+    });
+  };
 
   render() {
-    const { todoData } = this.state;
+    const { todoData, term, filter } = this.state;
+    const visibleItems = this.filter(this.search(todoData, term), filter);
     const doneCount = todoData.filter(item => item.done).length;
     const todoCount = todoData.length - doneCount;
 
     return (
       <div className='app'>
         <AppHeader toDo={todoCount} done={doneCount} />
-        <SearchAndFilter />
+        <div className='d-flex mb-2 justify-content-between flex-nowrap'>
+          <SearchPanel onSearchChange={this.onSearchChange} />
+          <ItemStatusFilter
+            filter={filter}
+            onFilterChange={this.onFilterChange}
+          />
+        </div>
         <ItemAddBtn onItemAdded={this.addItem} />
         <TodoList
-          todos={todoData}
+          todos={visibleItems}
           onDeleted={this.deleteItem}
           onToggleDone={this.onToggleDone}
           onToggleImportant={this.onToggleImportant}
